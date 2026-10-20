@@ -1,0 +1,118 @@
+clear all; close all;
+addpath ../COMMON/;
+set(0,'defaultAxesFontSize',20);
+set(0,'defaultAxesLineWidth',2);
+kappa = 0.005; % Thermal conductivity
+Tborder = 2; % A constant temperature on the external walls
+
+%time and simulation parameters
+
+dt = 0.1;    % 1e-3         
+N_iter = 200;         
+alpha = 0.5;    % Crank-Nicolson, 0 for euler explicit, 1 for euler implicit
+T1 = 5;         % Amplitude
+omega = 1.0;    % Frequency
+
+% Geometry
+
+x = readarray('x.dat');
+y = readarray('y.dat');
+mesh_info = load('meshinfo.dat');
+
+M = readmat('M.dat'); % Mass martrix
+[n, m] = size(M);
+K = readmat('K.dat'); % Stiffness matrix
+
+% Dirichlet mask
+
+BC_Dir_hole = readarray('BCdir5.dat');
+ii_Dir_hole = find(abs(BC_Dir_hole)>0); % Nodes on the pipe
+
+BC_Dir_borders = readarray('BCdir1234.dat');
+ii_Dir_borders = find(abs(BC_Dir_borders)>0); % Nodes on the external boundaries
+
+BC_Dir = readarray('BCdir.dat');
+ii_int = find(BC_Dir==0); % Internal nodes
+
+% A point
+% The coordinates x = 0.75 and y = 0.0 avoid points where the result is known in advance
+
+xtarget_a = 0.75;
+ytarget_a = 0.0;
+for inode = 1:length(x)
+    dist_a(inode) = sqrt((x(inode)-xtarget_a)^2 + (y(inode)-ytarget_a)^2);
+end
+list_a = find(dist_a < 0.01);
+node_a = list_a(1); % ID node closest to the A
+clear dist_a;
+
+% Empty matrix for records of temperature in the A point
+T_A_history = zeros(N_iter, 1);
+time_history = zeros(N_iter, 1);
+
+% Tutaj tworzymy macierze z ogromnego równania z PDFa. 
+% Robimy to przed pętlą, żeby komputer nie liczył tego samego 200 razy
+
+A_mat = (1/dt)*M + alpha*kappa*K;         % Macierz dla "przyszłości" T^(n+1)
+B_mat = (1/dt)*M - (1-alpha)*kappa*K;     % Macierz dla "przeszłości" T^(n)
+Ared = A_mat(ii_int, ii_int);             % Wycinamy tylko środek materiału
+
+% 6 warunek początkowy
+
+T_old = zeros(n, 1); % W czasie t=0 cały materiał ma 0 stopni!
+
+%[output:579de872]
+Td(ii_Dir_borders) = Tborder;  % Stała temperatura na zewnętrznym kwadracie
+% 7 pętla czasu
+
+for iter = 1:N_iter
+    
+    t = iter * dt; % Aktualny czas symulacji
+    time_history(iter) = t;
+    
+    % Nowa temperatura rury (funkcja cosinus)
+    Thole = T1 * cos(omega * t); 
+    
+    % t na krawędziach Dirichlet
+    Td = zeros(n, 1);
+    Td(ii_Dir_hole) = Thole;       % Zmienna temperatura na rurze
+    
+    % Liczymy prawą stronę równania (RHS) bazując na POPRZEDNIM kroku
+    % zakładamy brak źródeł ciepła wewnątrz (s=0), więc je pomijamy.
+    RHS_n = B_mat * T_old;
+    
+    % Przenosimy znane temperatury z brzegów na prawą stronę
+    C = RHS_n - A_mat * Td;
+    Cred = C(ii_int); % Wycinamy tylko wartości dla wnętrza
+    Tred = Ared \ Cred;
+    
+    % Składamy pełen obraz: Brzegi (Td) + Wnętrze (Tred)
+    T_new = Td;
+    T_new(ii_int) = Tred;
+    
+    % Zapisujemy temperaturę w punkcie A do naszego "dziennika"
+    T_A_history(iter) = T_new(node_a);
+    
+    % Aktualizujemy przeszłość na poczet kolejnego kroku pętli
+    T_old = T_new;
+end
+
+% 8
+FIG_2D = visu_2D(x, y, mesh_info, T_new, 'none', 'on');
+caxis([-T1 T1]); % Skala kolorów dostosowana do amplitudy
+exportgraphics(FIG_2D, 'unsteady_solution.png');
+
+% Rysujemy wykres zmiany temperatury w punkcie A
+figure;
+plot(time_history, T_A_history, '-r', 'LineWidth', 2);
+xlabel('Time [s]');
+grid on;
+
+%[appendix]{"version":"1.0"}
+%---
+%[metadata:view]
+%   data: {"layout":"inline","rightPanelPercent":9}
+%---
+%[output:579de872]
+%   data: {"dataType":"error","outputData":{"errorType":"runtime","text":"Unrecognized function or variable 'Thole'."}}
+%---

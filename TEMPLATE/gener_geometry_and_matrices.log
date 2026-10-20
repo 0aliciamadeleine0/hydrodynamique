@@ -1,0 +1,28 @@
+   57 : varf k(T,phi)=int2d(Th)(dx(T)*dx(phi)+dy(T)*dy(phi));
+   58 : matrix K=k(Xh,Xh);
+   59 : ofstream kk("K.dat");
+   60 : kk << K;
+   61 :
+   62 : // (3.3) Dirichlet masks
+   63 : varf b1234(T,phi)=int2d(Th)(phi*T) + on(1,2,3,4,T=1e-30);
+   64 : BCdir1234[]=b1234(0,Xh);
+   65 : ofstream f1234("BCdir1234.dat");
+   66 : f1234 << BCdir1234[];
+   67 :
+   68 : varf b5(T,phi)=int2d(Th)(phi*T) + on(5,T=1e-30);
+   69 : BCdir5[]=b5(0,Xh);
+   70 : ofstream f5("BCdir5.dat");
+   71 : f5 << BCdir5[];
+   72 :
+   73 : BCdir[]=m(0,Xh);
+   74 : ofstream fBC("BCdir.dat");
+   75 : fBC << BCdir[];
+   76 :  sizestack + 1024 =4416  ( 3392 )
+ 
+  --  mesh:  Nb of Triangles =    766, Nb of Vertices 439
+  number of required edges : 0
+times: compile 0.061s, execution 0.164s,  mpirank:0
+ ######## unfreed pointers   12362 Nb pointer,   0Bytes  ,  mpirank 0, memory leak =0
+ CodeAlloc : nb ptr  4325,  size :547024 mpirank: 0
+Ok: Normal End
+ try getConsole C:\Users\Administrator\Desktop\TP_compressible-20261005\template-steady-heat\TEMPLATE\gener_geometry_and_matrices.edp

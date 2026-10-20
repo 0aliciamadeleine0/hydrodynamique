@@ -1,0 +1,75 @@
+// *********************************************************************** //
+// Steady heat problem without source term                                 
+// *********************************************************************** //
+// (0) Physical constants and numerical parameters
+//real kappa=1;    
+real r=0.5;      
+real RF=4;       
+
+
+// *********************************************************************** //
+// (1) Generate the geometry and corresponding mesh
+border left(t=-1,1){x=-1;y=-t;label=1;};
+border lower(t=-1,1){x=t;y=-1;label=2;};
+border right(t=-1,1){x=1;y=t;label=3;};
+border upper(t=-1,1){x=-t;y=1;label=4;};
+border hole(t=0,2*pi){x=r*cos(t);y=r*sin(t);label=5;};
+mesh Th = buildmesh(left(4*RF)+upper(4*RF)+lower(4*RF)+right(4*RF)
+                    +hole(-12*RF));
+
+plot(Th,wait=1); // Plot the mesh
+savemesh(Th,"mesh.dat"); // Save the mesh
+
+
+// *********************************************************************** //
+// (2) Build the Finite Element framework
+fespace Xh(Th,P2); // Take second order polynomials for the decomposition
+Xh T, Phi, BCdir1234, BCdir5, BCdir, xx, yy;
+
+// Write coordinates of the mesh to file
+xx=x;
+yy=y;
+ofstream x1("x.dat");
+x1 << xx[];
+ofstream y1("y.dat");
+y1 << yy[];
+
+int Ntot=Xh.nt;
+int Ndeg=Xh.ndofK;
+ofstream meshinfo("meshinfo.dat");
+int n=0;
+for (int n = 0; n < Ntot; n++)
+   {
+   meshinfo << n << " ";
+   for (int i = 0; i < Ndeg; i++)
+      meshinfo << Xh(n,i) << " ";
+      meshinfo << endl;}
+
+// *********************************************************************** //
+// (3) Get the values of the different matrices
+// (3.1) Mass matrix
+varf m(T,phi)=int2d(Th)(phi*T) + on(1,2,3,4,5,T=1e-30);
+matrix M=m(Xh,Xh);
+ofstream mm("M.dat");
+mm << M;
+
+// (3.2) Stiffness matrix
+varf k(T,phi)=int2d(Th)(dx(T)*dx(phi)+dy(T)*dy(phi));
+matrix K=k(Xh,Xh);
+ofstream kk("K.dat");
+kk << K;
+
+// (3.3) Dirichlet masks
+varf b1234(T,phi)=int2d(Th)(phi*T) + on(1,2,3,4,T=1e-30);
+BCdir1234[]=b1234(0,Xh);
+ofstream f1234("BCdir1234.dat");
+f1234 << BCdir1234[];
+
+varf b5(T,phi)=int2d(Th)(phi*T) + on(5,T=1e-30);
+BCdir5[]=b5(0,Xh);
+ofstream f5("BCdir5.dat");
+f5 << BCdir5[];
+
+BCdir[]=m(0,Xh);
+ofstream fBC("BCdir.dat");
+fBC << BCdir[];

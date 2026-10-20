@@ -1,0 +1,8 @@
+mesh Th = readmesh("mesh.dat");
+fespace Xh(Th,P2);
+Xh T;
+ifstream f("T.dat");
+f >> T[];
+plot(T,wait=1,cmm="Temperature field",value=true
+      ,ps="temperature.eps");
+ 

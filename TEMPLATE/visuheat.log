@@ -1,0 +1,24 @@
+-- FreeFem++ v4.15 (Wed Dec 11 16:48:56 CET 2024 - git v4.15-7-gb1e524c8c)
+   file : C:\Users\Administrator\Desktop\TP_compressible-20261005\template-steady-heat\TEMPLATE\visuheat.edp
+ Load: lg_fem lg_mesh lg_mesh3 eigenvalue
+    1 : mesh Th = readmesh("mesh.dat");
+    2 : fespace Xh(Th,P2);
+    3 : Xh T;
+    4 : ifstream f("T.dat");
+    5 : f >> T[];
+    6 : plot(T,wait=1,cmm="Temperature field",value=true
+    7 :       ,ps="temperature.eps")'ffglut.exe' is not recognized as an internal or external command,
+operable program or batch file.
+;
+    8 :
+    9 :  sizestack + 1024 =1616  ( 592 )
+ 
+  --  mesh:  Nb of Triangles =    766, Nb of Vertices 439
+ Error opening file T.dat
+  current line = 4
+Exec error : Error opening file
+   -- number :1
+Exec error : Error opening file
+   -- number :1
+ err code 8 ,  mpirank 0
+ try getConsole C:\Users\Administrator\Desktop\TP_compressible-20261005\template-steady-heat\TEMPLATE\visuheat.edp
